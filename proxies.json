@@ -1,0 +1,171 @@
+{
+  "$schema": "http://json.schemastore.org/proxies",
+  "proxies": {
+    "proxy1": {
+    "matchCondition": {
+        "methods": [ "POST" ],
+        "route": "/api/postReportData"
+    },
+    "backendUri": "https://localhost/api/postReportData",
+    "requestOverrides": {
+        "backend.request.headers.Accept": "application/xml",
+        "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+    }},
+    "proxy2": {
+      "matchCondition": {
+          "methods": [ "GET" ],
+          "route": "/api/getOntologyManagement"
+      },
+      "backendUri": "https://localhost/api/getOntologyManagement",
+      "requestOverrides": {
+          "backend.request.headers.Accept": "application/xml",
+          "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+      }},
+      "proxy3": {
+        "matchCondition": {
+            "methods": [ "POST" ],
+            "route": "/api/postAllProducts"
+        },
+        "backendUri": "https://localhost/api/postAllProducts",
+        "requestOverrides": {
+            "backend.request.headers.Accept": "application/xml",
+            "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+        }},
+        "proxy4": {
+          "matchCondition": {
+              "methods": [ "POST" ],
+              "route": "/api/postselectedProducts"
+          },
+          "backendUri": "https://localhost/api/postselectedProducts",
+          "requestOverrides": {
+              "backend.request.headers.Accept": "application/xml",
+              "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+          }},
+          "proxy5": {
+            "matchCondition": {
+                "methods": [ "POST" ],
+                "route": "/api/postRestrictedSubstance"
+            },
+            "backendUri": "https://localhost/api/postRestrictedSubstance",
+            "requestOverrides": {
+                "backend.request.headers.Accept": "application/xml",
+                "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+            }},
+            "proxy6": {
+              "matchCondition": {
+                  "methods": [ "POST" ],
+                  "route": "/api/postSalesInformation"
+              },
+              "backendUri": "https://localhost/api/postSalesInformation",
+              "requestOverrides": {
+                  "backend.request.headers.Accept": "application/xml",
+                  "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+              }},
+              "proxy7": {
+                "matchCondition": {
+                    "methods": [ "POST" ],
+                    "route": "/api/postToxicology"
+                },
+                "backendUri": "https://localhost/api/postToxicology",
+                "requestOverrides": {
+                    "backend.request.headers.Accept": "application/xml",
+                    "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+                }},
+                "proxy8": {
+                  "matchCondition": {
+                      "methods": [ "POST" ],
+                      "route": "/api/postProductCompliance"
+                  },
+                  "backendUri": "https://localhost/api/postProductCompliance",
+                  "requestOverrides": {
+                      "backend.request.headers.Accept": "application/xml",
+                      "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+                  }},
+                  "proxy9": {
+                    "matchCondition": {
+                        "methods": [ "POST" ],
+                        "route": "/api/postProductAttributes"
+                    },
+                    "backendUri": "https://localhost/api/postProductAttributes",
+                    "requestOverrides": {
+                        "backend.request.headers.Accept": "application/xml",
+                        "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+                    }},
+                    "proxy10": {
+                      "matchCondition": {
+                          "methods": [ "POST" ],
+                          "route": "/api/postOntologyDocument"
+                      },
+                      "backendUri": "https://localhost/api/postOntologyDocument",
+                      "requestOverrides": {
+                          "backend.request.headers.Accept": "application/xml",
+                          "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+                      }},
+                      "proxy11": {
+                        "matchCondition": {
+                            "methods": [ "POST" ],
+                            "route": "/api/postCustomerCommunication"
+                        },
+                        "backendUri": "https://localhost/api/postCustomerCommunication",
+                        "requestOverrides": {
+                            "backend.request.headers.Accept": "application/xml",
+                            "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+                        }},
+                        "proxy12": {
+                          "matchCondition": {
+                              "methods": [ "POST" ],
+                              "route": "/api/postHomePageData"
+                          },
+                          "backendUri": "https://localhost/api/postHomePageData",
+                          "requestOverrides": {
+                              "backend.request.headers.Accept": "application/xml",
+                              "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+                          }},"proxy13": {
+                            "matchCondition": {
+                                "methods": [ "POST" ],
+                                "route": "/api/postUpdateOntologyManagement"
+                            },
+                            "backendUri": "https://localhost/api/postUpdateOntologyManagement",
+                            "requestOverrides": {
+                                "backend.request.headers.Accept": "application/xml",
+                                "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+                            }},"proxy14": {
+                                "matchCondition": {
+                                    "methods": [ "POST" ],
+                                    "route": "/api/postOtherDetails"
+                                },
+                                "backendUri": "https://localhost/api/postOtherDetails",
+                                "requestOverrides": {
+                                    "backend.request.headers.Accept": "application/xml",
+                                    "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+                                }},"proxy15": {
+                                    "matchCondition": {
+                                        "methods": [ "POST" ],
+                                        "route": "/api/postUpdateOntologyDocuments"
+                                    },
+                                    "backendUri": "https://localhost/api/postUpdateOntologyDocuments",
+                                    "requestOverrides": {
+                                        "backend.request.headers.Accept": "application/xml",
+                                        "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+                                    }},
+                                    "proxy16": {
+                                        "matchCondition": {
+                                            "methods": [ "POST" ],
+                                            "route": "/api/postOntologyManagementLogDetails"
+                                        },
+                                        "backendUri": "https://localhost/api/postOntologyManagementLogDetails",
+                                        "requestOverrides": {
+                                            "backend.request.headers.Accept": "application/xml",
+                                            "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+                                        }},
+                                    "proxy17": {
+                                        "matchCondition": {
+                                            "methods": [ "POST" ],
+                                            "route": "/api/postOntologyDocumentLogDetails"
+                                        },
+                                        "backendUri": "https://localhost/api/postOntologyDocumentLogDetails",
+                                        "requestOverrides": {
+                                            "backend.request.headers.Accept": "application/xml",
+                                            "backend.request.headers.x-functions-key": "YyZEOHJPjbGWOIxCiZPQ6aJABHI64LQ68aIgPEAU/rWRWfyPHyqU3A=="
+                                        }}
+}}
