@@ -21,6 +21,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
 def update_ontology_value(update_data):
     try:
+        logging.info(f'body {update_data}')
         if "ontology_Id" in update_data:
             status=edit_ontology_value(update_data) 
             # pass
@@ -101,7 +102,7 @@ def edit_ontology_value(update_data):
         try:
             conn.commit()
             #update in change_audit_log table
-            audit_status=helper.update_in_change_audit_log(update_data.get('ontology_Id','-'),"Ontology Management","PIH-admin","update",current_date)
+            audit_status=helper.update_in_change_audit_log(update_data.get('ontology_Id','-'),"Ontology Management",update_data.get("synonymsUpdatedBy","-"),"update",current_date)
             doc={
             "solr_id":update_data.get("solr_Id","-"),
             "ONTOLOGY_KEY":update_data.get("synonymsProductName",""),

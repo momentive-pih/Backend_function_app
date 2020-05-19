@@ -22,6 +22,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
 def update_ontology_document(update_data):
     try:
+        logging.info(f'doc body {update_data}')
         current_date=str(datetime.now(est))[:-9]
         conn=helper.SQL_connection()
         cursor=conn.cursor()
