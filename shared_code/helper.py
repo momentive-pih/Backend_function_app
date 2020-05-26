@@ -8,6 +8,7 @@ product_column = config.product_column
 
 def querying_solr_data(query,params):
     try:
+        # logging.info(f'processing querying_solr_data function in helper file')
         df_product_combine=pd.DataFrame()      
         response = solr_product.search(query,**params)
         result = json.dumps(list(response))
@@ -19,10 +20,12 @@ def querying_solr_data(query,params):
         df_product_combine=df_product_combine.replace({"nan":"-"})
         return df_product_combine
     except Exception as e:
+        # loggin.error(f'error in processing querying_solr_data function {e}')
         return df_product_combine
 
 def intial_search_data(query,check_columns,params={}):
     try:
+        # logging.info(f'processing querying_solr_data function in helper file')
         params["rows"]=config.max_rows
         response = solr_product.search(query,**params)
         result = json.dumps(list(response))
@@ -37,32 +40,38 @@ def intial_search_data(query,check_columns,params={}):
         return df_product_combine
 
 def get_data_from_core(core,query,params={}):
-    params["rows"]=config.max_rows
-    core_df=pd.DataFrame()  
-    response = core.search(query,**params)
-    data_list=list(response)
-    result = json.dumps(data_list)
-    core_df=pd.read_json(result,dtype=str)
-    core_df=core_df.replace({"nan":"-"})
-    return data_list,core_df
+    try:
+        params["rows"]=config.max_rows
+        core_df=pd.DataFrame()  
+        response = core.search(query,**params)
+        data_list=list(response)
+        result = json.dumps(data_list)
+        core_df=pd.read_json(result,dtype=str)
+        core_df=core_df.replace({"nan":"-"})
+        return data_list,core_df
+    except Exception as e:
+        return [],core_df
 
 def namrod_bdt_product_details():
-    query=f'(TEXT1:* || TEXT3:*) && -TEXT6:X && TYPE:(NAMPROD || MATNBR) && SUBCT:REAL_SUB'
-    product_list,df_product=get_data_from_core(solr_product,query,{"fl":"TYPE, TEXT1, TEXT3"})
-    all_product=[]
-    if "TEXT1" in df_product.columns:
-        df_namprod=df_product[(df_product["TYPE"]=="NAMPROD") & (~df_product["TEXT1"].isin(["-"]))]
-        namprod=list(df_namprod["TEXT1"].unique())
-        for item in namprod:
-            namrow={"name":item,"type":"NAMPROD","key":"NAM*"}
-            all_product.append(namrow)
-    if "TEXT3" in df_product.columns:
-        df_bdt=df_product[(df_product["TYPE"]=="MATNBR") & (~df_product["TEXT3"].isin(["-"]))]
-        bdt=list(df_bdt["TEXT3"].unique())
-        for item in bdt:
-            bdtrow={"name":item,"type":"BDT","key":"BDT*"}
-            all_product.append(bdtrow)
-    return all_product
+    try:
+        query=f'(TEXT1:* || TEXT3:*) && -TEXT6:X && TYPE:(NAMPROD || MATNBR) && SUBCT:REAL_SUB'
+        product_list,df_product=get_data_from_core(solr_product,query,{"fl":"TYPE, TEXT1, TEXT3"})
+        all_product=[]
+        if "TEXT1" in df_product.columns:
+            df_namprod=df_product[(df_product["TYPE"]=="NAMPROD") & (~df_product["TEXT1"].isin(["-"]))]
+            namprod=list(df_namprod["TEXT1"].unique())
+            for item in namprod:
+                namrow={"name":item,"type":"NAMPROD","key":"NAM*"}
+                all_product.append(namrow)
+        if "TEXT3" in df_product.columns:
+            df_bdt=df_product[(df_product["TYPE"]=="MATNBR") & (~df_product["TEXT3"].isin(["-"]))]
+            bdt=list(df_bdt["TEXT3"].unique())
+            for item in bdt:
+                bdtrow={"name":item,"type":"BDT","key":"BDT*"}
+                all_product.append(bdtrow)
+        return all_product
+    except Exception as e:
+        return []
 
 def product_level_creation(product_df,product_category_map,type,subct,key,level_name,filter_flag="no"):
     try:
@@ -108,122 +117,154 @@ def product_level_creation(product_df,product_category_map,type,subct,key,level_
         return json_list
 
 def replace_character_for_querying(value_list):
-    replace={" ":"\ ","/":"\/","*":"\*","(":"\(",")":"\)",":":"\:","[":"\[","]":"\]"}
-    replaced_list=[data.translate(str.maketrans(replace)) for data in value_list if (data!=None and str(data)!='-')]
-    replaced_query=" || ".join(replaced_list)
-    return replaced_query
+    try:
+        replace={" ":"\ ","/":"\/","*":"\*","(":"\(",")":"\)",":":"\:","[":"\[","]":"\]"}
+        replaced_list=[data.translate(str.maketrans(replace)) for data in value_list if (data!=None and str(data)!='-')]
+        replaced_query=" || ".join(replaced_list)
+        return replaced_query
+    except Exception as e:
+        pass
+
+def replace_char_in_url(path):
+    try:
+        replace={"?":"%3F","#":"%23"}
+        return path.translate(str.maketrans(replace))
+    except Exception as e:
+        return path
 
 def finding_cas_details_using_real_specid(product_rspec,params):
-    product_rspec=" || ".join(product_rspec)
-    query=f'TYPE:SUBIDREL && TEXT2:({product_rspec}) && SUBCT:REAL_SUB && -TEXT6:X'
-    spec_rel_df=querying_solr_data(query,params) 
-    spec_rel_list=spec_rel_df[["TEXT1","TEXT2"]].values.tolist()
-    column_value = list(spec_rel_df["TEXT1"].unique())
-    spec_query=" || ".join(column_value)
-    query=f'TYPE:NUMCAS && SUBCT:(PURE_SUB || REAL_SUB) && TEXT2:({spec_query}) && -TEXT6:X'
-    cas_df=querying_solr_data(query,params)                 
-    #real spec will act as pure spec componant
-    query=f'TYPE:NUMCAS && TEXT2:({product_rspec}) && -TEXT6:X'
-    real_pure_spec_df=querying_solr_data(query,params)
-    cas_df=pd.concat([cas_df,real_pure_spec_df])
-    return cas_df,spec_rel_list
+    try:
+        product_rspec=" || ".join(product_rspec)
+        query=f'TYPE:SUBIDREL && TEXT2:({product_rspec}) && SUBCT:REAL_SUB && -TEXT6:X'
+        spec_rel_df=querying_solr_data(query,params) 
+        spec_rel_list=spec_rel_df[["TEXT1","TEXT2"]].values.tolist()
+        column_value = list(spec_rel_df["TEXT1"].unique())
+        spec_query=" || ".join(column_value)
+        query=f'TYPE:NUMCAS && SUBCT:(PURE_SUB || REAL_SUB) && TEXT2:({spec_query}) && -TEXT6:X'
+        cas_df=querying_solr_data(query,params)                 
+        #real spec will act as pure spec componant
+        query=f'TYPE:NUMCAS && TEXT2:({product_rspec}) && -TEXT6:X'
+        real_pure_spec_df=querying_solr_data(query,params)
+        cas_df=pd.concat([cas_df,real_pure_spec_df])
+        return cas_df,spec_rel_list
+    except Exception as e:
+        pass
 
 def finding_product_details_using_real_specid(product_rspec,params):
-    product_rspec=" || ".join(product_rspec)
-    query=f'TYPE:NAMPROD && SUBCT:REAL_SUB && TEXT2:({product_rspec}) && -TEXT6:X'
-    prod_df=querying_solr_data(query,params)
-    return prod_df
+    try:
+        product_rspec=" || ".join(product_rspec)
+        query=f'TYPE:NAMPROD && SUBCT:REAL_SUB && TEXT2:({product_rspec}) && -TEXT6:X'
+        prod_df=querying_solr_data(query,params)
+        return prod_df
+    except Exception as e:
+        pass
 
 def finding_material_details_using_real_specid(product_rspec,params):
-    product_rspec=" || ".join(product_rspec)
-    query=f'TYPE:MATNBR && TEXT2:({product_rspec}) && -TEXT6:X'
-    material_df=querying_solr_data(query,params)
-    return material_df
+    try:
+        product_rspec=" || ".join(product_rspec)
+        query=f'TYPE:MATNBR && TEXT2:({product_rspec}) && -TEXT6:X'
+        material_df=querying_solr_data(query,params)
+        return material_df
+    except Exception as e:
+        pass
 
 def construct_common_level_json(json_array,home_flag=""):
-    all_details={}
-    spec_list=[]
-    material_list=[]
-    last_specid=''
-    for item in json_array.get("Spec_id"):
-        spec_nam_id=item.get("name")
-        spec_id_split=item.get("name").split(config.pipe_delimitter)
-        if len(spec_id_split)>0:
-            spec_id=spec_id_split[0].strip()
-            if last_specid!=spec_id:
-                spec_list.append(spec_id)
-                all_details[spec_id]={}
-            else:
-                continue
-        #product level classify
-        if(json_array.get("product_Level")):
-            for prod in json_array.get("product_Level"):
-                prod_spec=prod.get("real_Spec_Id")
-                synonyms=prod.get("synonyms").strip()
-                namprod=prod.get("namprod").strip()
-                if prod_spec==spec_id:
-                    all_details=item_arrange(all_details,prod_spec,"namprod",namprod)  
-                    all_details=item_arrange(all_details,prod_spec,"synonyms",synonyms)
-                    #print(all_details)
-        #material level classify
-        if(json_array.get("Mat_Level")): 
-            for matid in json_array.get("Mat_Level"):         
-                bdt=matid.get("bdt")
-                material_number=matid.get("material_Number")
-                material_list.append(material_number)
-                if home_flag=="":
-                    mat_spec_list=matid.get("real_Spec_Id")
-                    if spec_nam_id in mat_spec_list:
-                        all_details=item_arrange(all_details,spec_id,"material_number",material_number)
-                        all_details=item_arrange(all_details,spec_id,"bdt",bdt)
-                elif home_flag=="home_page":
-                    home_mat_spec_list=matid.get("spec_Nam_List")
-                    for data in home_mat_spec_list:
-                        mat_spec_nam=data.get("real_Spec_Id")
-                        if mat_spec_nam==spec_nam_id:
-                            all_details=item_arrange(all_details,spec_id,"material_number",material_number)
-                            all_details=item_arrange(all_details,spec_id,"bdt",bdt)
-                            break
-
-        #cas level classify
-        if(json_array.get("CAS_Level")): 
-            for casid in json_array.get("CAS_Level"):
-                pure_spec=casid.get("pure_Spec_Id")
-                cas_number=casid.get("cas_Number")
-                chemical_name=casid.get("chemical_Name")
-                if home_flag=="":
-                    cas_spec_list=casid.get("real_Spec_Id")
-                    if spec_nam_id in cas_spec_list:
-                        all_details=item_arrange(all_details,spec_id,"pure_spec_id",pure_spec)
-                        all_details=item_arrange(all_details,spec_id,"cas_number",cas_number)
-                        all_details=item_arrange(all_details,spec_id,"chemical_name",chemical_name)
-                elif home_flag=="home_page":
-                    home_cas_spec=casid.get("spec_Nam_List")
-                    for data in home_cas_spec:
-                        cas_spec_nam=data.get("real_Spec_Id")
-                        if cas_spec_nam==spec_nam_id:
-                            all_details=item_arrange(all_details,spec_id,"pure_spec_id",pure_spec)
-                            all_details=item_arrange(all_details,spec_id,"cas_number",cas_number)
-                            all_details=item_arrange(all_details,spec_id,"chemical_name",chemical_name)
-                            break
-
-        last_specid=spec_id
-    #print(all_details)
-    return all_details,spec_list,list(set(material_list))
-    
+    try:
+        all_details={}
+        spec_list=[]
+        material_list=[]
+        last_specid=''
+        for item in json_array.get("Spec_id"):
+            try:
+                spec_nam_id=item.get("name")
+                spec_id_split=item.get("name").split(config.pipe_delimitter)
+                if len(spec_id_split)>0:
+                    spec_id=spec_id_split[0].strip()
+                    if last_specid!=spec_id:
+                        spec_list.append(spec_id)
+                        all_details[spec_id]={}
+                    else:
+                        continue
+                #product level classify
+                if(json_array.get("product_Level")):
+                    for prod in json_array.get("product_Level"):
+                        try:
+                            prod_spec=prod.get("real_Spec_Id")
+                            synonyms=prod.get("synonyms").strip()
+                            namprod=prod.get("namprod").strip()
+                            if prod_spec==spec_id:
+                                all_details=item_arrange(all_details,prod_spec,"namprod",namprod)  
+                                all_details=item_arrange(all_details,prod_spec,"synonyms",synonyms)
+                            #print(all_details)
+                        except Exception as e:
+                            pass
+                #material level classify
+                if(json_array.get("Mat_Level")): 
+                    try:
+                        for matid in json_array.get("Mat_Level"):         
+                            bdt=matid.get("bdt")
+                            material_number=matid.get("material_Number")
+                            material_list.append(material_number)
+                            if home_flag=="":
+                                mat_spec_list=matid.get("real_Spec_Id")
+                                if spec_nam_id in mat_spec_list:
+                                    all_details=item_arrange(all_details,spec_id,"material_number",material_number)
+                                    all_details=item_arrange(all_details,spec_id,"bdt",bdt)
+                            elif home_flag=="home_page":
+                                home_mat_spec_list=matid.get("spec_Nam_List")
+                                for data in home_mat_spec_list:
+                                    mat_spec_nam=data.get("real_Spec_Id")
+                                    if mat_spec_nam==spec_nam_id:
+                                        all_details=item_arrange(all_details,spec_id,"material_number",material_number)
+                                        all_details=item_arrange(all_details,spec_id,"bdt",bdt)
+                                        break
+                    except Exception as e:
+                        pass
+                #cas level classify
+                if(json_array.get("CAS_Level")): 
+                    for casid in json_array.get("CAS_Level"):
+                        pure_spec=casid.get("pure_Spec_Id")
+                        cas_number=casid.get("cas_Number")
+                        chemical_name=casid.get("chemical_Name")
+                        if home_flag=="":
+                            cas_spec_list=casid.get("real_Spec_Id")
+                            if spec_nam_id in cas_spec_list:
+                                all_details=item_arrange(all_details,spec_id,"pure_spec_id",pure_spec)
+                                all_details=item_arrange(all_details,spec_id,"cas_number",cas_number)
+                                all_details=item_arrange(all_details,spec_id,"chemical_name",chemical_name)
+                        elif home_flag=="home_page":
+                            home_cas_spec=casid.get("spec_Nam_List")
+                            for data in home_cas_spec:
+                                cas_spec_nam=data.get("real_Spec_Id")
+                                if cas_spec_nam==spec_nam_id:
+                                    all_details=item_arrange(all_details,spec_id,"pure_spec_id",pure_spec)
+                                    all_details=item_arrange(all_details,spec_id,"cas_number",cas_number)
+                                    all_details=item_arrange(all_details,spec_id,"chemical_name",chemical_name)
+                                    break
+                last_specid=spec_id
+            except Exception as e:
+                pass
+        #print(all_details)
+        return all_details,spec_list,list(set(material_list))
+    except Exception as e:
+        pass
+        
 def item_arrange(all_details,spec_id,prod_type,prod_value):
-    if(all_details.get(spec_id).get(prod_type)):
-        prod_list=all_details.get(spec_id).get(prod_type)
-        if prod_value != "-" and len(prod_list)>0:
-            if prod_value not in prod_list:
-                prod_list.append(prod_value)
-                # prod_list=list(set(prod_list))
-                all_details[spec_id][prod_type]=prod_list
-    else:
-        all_details[spec_id][prod_type]=[]
-        if prod_value != "-":
-            all_details[spec_id][prod_type].append(prod_value)
-    return all_details
+    try:
+        if(all_details.get(spec_id).get(prod_type)):
+            prod_list=all_details.get(spec_id).get(prod_type)
+            if prod_value != "-" and len(prod_list)>0:
+                if prod_value not in prod_list:
+                    prod_list.append(prod_value)
+                    # prod_list=list(set(prod_list))
+                    all_details[spec_id][prod_type]=prod_list
+        else:
+            all_details[spec_id][prod_type]=[]
+            if prod_value != "-":
+                all_details[spec_id][prod_type].append(prod_value)
+        return all_details
+    except Exception as e:
+        pass
 
 def unstructure_template(all_details,category):
     try:
@@ -468,6 +509,7 @@ def make_log_details(id_key,created_by,created_date):
                 json_make["updated_By"]=data.get("user_name")
                 json_make["updated_Date"]=data.get("updated_date")
                 json_list.append(json_make)  
+        # if action='':
         json_make={}
         json_make["updated_By"]=created_by
         json_make["updated_Date"]=created_date

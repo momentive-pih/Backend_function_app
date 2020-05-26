@@ -115,6 +115,7 @@ def get_product_attributes(req_body):
                         json_make["file_Type"]=file_type
                         json_make["product"]=product
                         json_make["product_Type"]=product_type
+                        path=helper.replace_char_in_url(path)
                         json_make["prod_App"]=config.blob_file_path+path.replace("/dbfs/mnt/","")+config.sas_token
                         json_make["spec_Id"]=spec_id
                         json_list.append(json_make)          
@@ -218,6 +219,7 @@ def get_product_attributes(req_body):
                         product_type=item.get("PRODUCT_TYPE",config.hypen_delimiter)
                         spec_id=helper.finding_spec_details(spec_list,result_spec) 
                         path=datastr.get("file_path",config.hypen_delimiter)
+                        path=helper.replace_char_in_url(path)
                         if path.lower().endswith('pdf'):
                             file_type='pdf'
                         elif path.lower().endswith('png'):

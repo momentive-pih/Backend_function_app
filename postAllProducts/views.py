@@ -34,7 +34,7 @@ def all_products(data):
         search_key=''
         search_value=''
         key_flag=''
-        search=data
+        search=data.lstrip()
         key_found=''        
         if "*" in search:
             key_flag='s'

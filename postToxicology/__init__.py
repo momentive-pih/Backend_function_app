@@ -29,7 +29,8 @@ def get_toxicology_details(req_body):
             params={"fl":config.unstructure_column_str}
             unstructure_values,unstructure_df=helper.get_data_from_core(config.solr_unstructure_data,toxicology_query,params)        
             selant=[]
-            silanes=[]             
+            silanes=[]  
+            tox_study=[]           
             if len(unstructure_values)>0:
                 for item in unstructure_values:
                     try:
@@ -41,7 +42,8 @@ def get_toxicology_details(req_body):
                         product_type=item.get("PRODUCT_TYPE",config.hypen_delimiter)
                         datastr=json.loads(item.get("DATA_EXTRACT"))
                         category=item.get("CATEGORY","")
-                        file_path=datastr.get("file_path","")
+                        file_path=datastr.get("file_path",config.hypen_delimiter)
+                        file_path=helper.replace_char_in_url(file_path)
                         file_split=file_path.split("/")
                         file_source=''
                         for source in config.file_sources:
@@ -66,18 +68,35 @@ def get_toxicology_details(req_body):
                             extract_field["final_Report"]=datastr.get("Issue Date",config.hypen_delimiter)
                             json_make["extract_Field"]=extract_field
                             json_list.append(json_make)
-                        elif sub_category=="Monthly Toxicology Study List" and category=="tox_study_silanes":
+                        elif sub_category=="Monthly Toxicology Study List" :
                             json_make["product_Commercial_Name"]=product
-                            json_make["studies"]=datastr.get("Studies",config.hypen_delimiter)
-                            json_make["status"]=datastr.get("Status",config.hypen_delimiter)
-                            json_make["comments"]=datastr.get("Comments",config.hypen_delimiter)
                             json_make["date"]=datastr.get("date",config.hypen_delimiter)
-                            silanes.append(json_make)                  
-                        elif sub_category=="Monthly Toxicology Study List" and category=="tox_study_selant":
-                            json_make["test"]=datastr.get("Test",config.hypen_delimiter)
-                            json_make["actions"]=datastr.get("Actions",config.hypen_delimiter)
-                            json_make["date"]=datastr.get("date",config.hypen_delimiter)
-                            selant.append(json_make)
+                            if category=="tox_study_silanes":
+                                studies=datastr.get("Studies",config.hypen_delimiter)
+                                status=datastr.get("Status",config.hypen_delimiter)
+                                comments=datastr.get("Comments",config.hypen_delimiter)
+                                if studies !=None or status !=None or comments !=None:
+                                    json_make["studies"]=studies
+                                    json_make["status"]=status
+                                    json_make["comments"]=comments
+                                    json_make["test"]=config.hypen_delimiter
+                                    json_make["actions"]=config.hypen_delimiter
+                                    json_make["segment"]="silanes"
+                                else:
+                                    continue       
+                            elif category=="tox_study_selant":
+                                json_make["test"]=datastr.get("Test",config.hypen_delimiter)
+                                json_make["actions"]=datastr.get("Actions",config.hypen_delimiter)
+                                json_make["studies"]=config.hypen_delimiter
+                                json_make["status"]=config.hypen_delimiter
+                                json_make["comments"]=config.hypen_delimiter
+                                json_make["segment"]="selant"
+                            json_list.append(json_make)                  
+                        # elif sub_category=="Monthly Toxicology Study List" and category=="tox_study_selant":
+                        #     json_make["test"]=datastr.get("Test",config.hypen_delimiter)
+                        #     json_make["actions"]=datastr.get("Actions",config.hypen_delimiter)
+                        #     json_make["date"]=datastr.get("date",config.hypen_delimiter)
+                        #     selant.append(json_make)
                         elif sub_category=="Toxicology Summary":
                             json_make["date_Of_Issue"]=datastr.get("Date",config.hypen_delimiter)
                             path=config.blob_file_path+file_path.replace("/dbfs/mnt/","")+config.sas_token
@@ -88,13 +107,15 @@ def get_toxicology_details(req_body):
                         pass
             if sub_category=="Monthly Toxicology Study List":
                 monthly_studies={}
-                if len(selant)>0:
-                    selant=sort_date(selant)
-                if len(silanes):
-                    silanes=sort_date(silanes)  
-                monthly_studies["selant"]=selant
-                monthly_studies["silanes"]=silanes
-                json_list.append(monthly_studies)                    
+                # if len(selant)>0:
+                #     selant=sort_date(selant)
+                # if len(silanes):
+                #     silanes=sort_date(silanes) 
+                if len(json_list) >0:
+                    json_list=sort_date(json_list) 
+                # monthly_studies["selant"]=selant
+                # monthly_studies["silanes"]=silanes
+                # json_list.append(monthly_studies)                    
         elif sub_category=="Toxicology Registration Tracker":
             query=f'*:*'
             tracker_values,tracker_df=helper.get_data_from_core(config.solr_registration_tracker,query)
@@ -126,6 +147,7 @@ def sort_date(values):
             df=pd.read_json(result,dtype=str)
             df['Date'] =pd.to_datetime(df['date'])
             sorted_df=df.sort_values(by=['Date'],ascending=False)  
+            sorted_df=sorted_df.replace({"Nan":"-","nan":"-"})
             sorted_dict=json.loads(sorted_df.to_json(orient='index'))
             json_list=[]
             for item in sorted_dict:

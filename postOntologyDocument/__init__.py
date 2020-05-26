@@ -82,6 +82,7 @@ def get_assigned_ontology_document(req_body):
                         json_make["data_extract"]=datastr
                         json_make["sql_Id"]=item.get("ID",'0')
                         json_make["solr_Id"]=item.get("solr_id",config.hypen_delimiter)
+                        path=helper.replace_char_in_url(path)
                         json_make["url"]=(config.blob_file_path)+path.replace("/dbfs/mnt/","")+(config.sas_token)
                         extract_field={}
                         extract_field["ontologyKey"]=product

@@ -143,7 +143,9 @@ def get_customer_communication_details(req_body):
                 for att in attachment_split:
                     if att!="NULL" and att!='' and att!="Not Found":
                         path=att.split("/")
-                        filename=(att[1:]).replace("?","%3F")
+                        filename=(att[1:])
+                        # filename=(att[1:]).replace("?","%3F")
+                        filename=helper.replace_char_in_url(filename)
                         file=(config.blob_file_path)+filename+(config.sas_token)
                         add_doc.append({"name":path[-1],"url":file})
                 json_make["attached_Docs"]=add_doc
