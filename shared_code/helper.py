@@ -52,9 +52,12 @@ def get_data_from_core(core,query,params={}):
     except Exception as e:
         return [],core_df
 
-def namrod_bdt_product_details():
+def namrod_bdt_product_details(req_body):
     try:
-        query=f'(TEXT1:* || TEXT3:*) && -TEXT6:X && TYPE:(NAMPROD || MATNBR) && SUBCT:REAL_SUB'
+        search_data = req_body.get('SearchData')
+        data=search_data.lstrip()
+        search=replace_character_for_querying([data])
+        query=f'(TEXT1:{search}* || TEXT3:{search}*) && -TEXT6:X && TYPE:(NAMPROD || MATNBR) && SUBCT:REAL_SUB'
         product_list,df_product=get_data_from_core(solr_product,query,{"fl":"TYPE, TEXT1, TEXT3"})
         all_product=[]
         if "TEXT1" in df_product.columns:
@@ -73,12 +76,37 @@ def namrod_bdt_product_details():
     except Exception as e:
         return []
 
+# def namrod_bdt_product_details():
+#     try:
+#         query=f'(TEXT1:* || TEXT3:*) && -TEXT6:X && TYPE:(NAMPROD || MATNBR) && SUBCT:REAL_SUB'
+#         product_list,df_product=get_data_from_core(solr_product,query,{"fl":"TYPE, TEXT1, TEXT3"})
+#         all_product=[]
+#         if "TEXT1" in df_product.columns:
+#             df_namprod=df_product[(df_product["TYPE"]=="NAMPROD") & (~df_product["TEXT1"].isin(["-"]))]
+#             namprod=list(df_namprod["TEXT1"].unique())
+#             for item in namprod:
+#                 namrow={"name":item,"type":"NAMPROD","key":"NAM*"}
+#                 all_product.append(namrow)
+#         if "TEXT3" in df_product.columns:
+#             df_bdt=df_product[(df_product["TYPE"]=="MATNBR") & (~df_product["TEXT3"].isin(["-"]))]
+#             bdt=list(df_bdt["TEXT3"].unique())
+#             for item in bdt:
+#                 bdtrow={"name":item,"type":"BDT","key":"BDT*"}
+#                 all_product.append(bdtrow)
+#         return all_product
+#     except Exception as e:
+#         return []
+
 def product_level_creation(product_df,product_category_map,type,subct,key,level_name,filter_flag="no"):
     try:
         json_list=[]
         if filter_flag=="no":
             if type !='' and subct !='':
-                temp_df=product_df[(product_df["TYPE"]==type) & (product_df["SUBCT"]==subct)]
+                if subct == "all":
+                    subct=["REAL_SUB","PURE_SUB"]
+                else:
+                    subct=[subct]
+                temp_df=product_df[(product_df["TYPE"]==type) & (product_df["SUBCT"].isin(subct))]
                 temp_df=temp_df.drop(columns=["TYPE","SUBCT"])
             else:
                 temp_df=product_df[(product_df["TYPE"]==type)]

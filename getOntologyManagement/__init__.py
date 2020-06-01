@@ -26,7 +26,7 @@ def get_ontology_details():
         ontology_list=[]
         result=[]
         ontolgy_result,ontolgy_df=helper.get_data_from_core(config.solr_ontology,query)
-        nam_bdt_details=helper.namrod_bdt_product_details()       
+        # nam_bdt_details=helper.namrod_bdt_product_details()       
         for item in ontolgy_result:
             ontology_json={}
             ontology_json["key"]=item.get("ONTOLOGY_KEY","-")
@@ -38,8 +38,9 @@ def get_ontology_details():
             ontology_json["synonyms"]=item.get("ONTOLOGY_VALUE","-")
             ontology_json["id"]=item.get("ID","-")
             ontology_json["solr_Id"]=item.get("solr_id","-")
-            ontology_list.append(ontology_json)     
-        result=[{"ontology_Details":ontology_list,"product_Details":nam_bdt_details}]
+            ontology_list.append(ontology_json)
+        result=[{"ontology_Details":ontology_list}]     
+        # result=[{"ontology_Details":ontology_list,"product_Details":nam_bdt_details}]
         return result
     except Exception as e:
         return result

@@ -29,7 +29,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 home_page_data=home_page_details(all_details_json,spec_list,req_body_content)
                 result = json.dumps(home_page_data)   
     except Exception as e:
-        logging.error(str(e))
+        result = json.dumps(result) 
+        logging.info(f'error in home page function{e}')
     return func.HttpResponse(result,mimetype="application/json")
 
 def rearrange_json(basic_details):

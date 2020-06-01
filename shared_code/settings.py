@@ -172,13 +172,13 @@ report_data_region_code={
 "MSDS SG":["Singapore","SG01"],	
 "MSDS CN":["China","NG01"],	
 "MSDS BR":["Brazil","AM05"],	
-"MSDS AU":["Australia",""],	
+"MSDS AU":["Australia","AM01"],	
 "MSDS TW":["Taiwan","HK01"],	
 "MSDS MY":["Malaysia","TH01"],	
-"MSDS AE":["Utd.Arab Emir.","EU06"],	
-"MSDS ID":["Indonesia",""],	
-"MSDS NZ":["New Zealand",""],	
-"MSDS VN":["Vietnam",""],	
+"MSDS AE":["Unit.Arab Emir.","EU06"],	
+"MSDS ID":["Indonesia","AM01"],	
+"MSDS NZ":["New Zealand","AM01"],	
+"MSDS VN":["Viet Nam","AM01"],	
 "MSDS MX":["Mexico","AM04"]
 }
 in_compliance_notification_status=["on or in compliance with the inventory",

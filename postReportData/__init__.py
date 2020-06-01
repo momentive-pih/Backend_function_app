@@ -41,6 +41,9 @@ def get_report_data_details(req_body):
                     specid=data.get("SUBID")
                     namprod=all_details_json.get(specid).get("namprod",[])
                     material=all_details_json.get(specid).get("material_number",[])
+                    material_str=""
+                    mat_list=[mat.lstrip('0') for mat in material]
+                    material_str=",".join(mat_list)
                     region=str(data.get("RGVID","")).strip()
                     category=str(data.get("REPTY",config.hypen_delimiter)).strip()
                     variant_region=""
@@ -64,7 +67,7 @@ def get_report_data_details(req_body):
                         "version":str(data.get("VERSN",config.hypen_delimiter)).strip(),
                         "released_on":date_format,             
                         "spec_id":specid+(config.hypen_delimiter)+(config.comma_delimiter).join(namprod),
-                        "material_details":(config.comma_delimiter).join(material),
+                        "material_details":material_str,
                         "status":str(data.get("STATS",config.hypen_delimiter)).strip(),
                     }
                     report_list.append(report_json)

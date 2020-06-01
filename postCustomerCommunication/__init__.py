@@ -64,6 +64,7 @@ def get_customer_communication_details(req_body):
                                 json_make["productName"]=product
                                 json_make["id"]=count
                                 json_make["createdDate"]=date
+                                path=helper.replace_char_in_url(path)
                                 json_make["url"]=(config.blob_file_path)+path.replace("/dbfs/mnt/","")+(config.sas_token)
                                 json_list.append(json_make)
                         elif sub_category=="Heavy Metals content":
