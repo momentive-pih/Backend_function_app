@@ -31,7 +31,7 @@ def get_assigned_ontology_document(req_body):
             },"EU-FDA":{
                 "EU-FDA":[],"category":"EU-FDA"
             },"Toxicology-summary":{
-                "Toxicology-summary":[],"category":"Toxicology-summary"
+                "Toxicology-summary":[],"category":"Toxicology Summary"
             },"CIDP":{
                 "CIDP":[],"category":"CIDP"
             },"Toxicology":{

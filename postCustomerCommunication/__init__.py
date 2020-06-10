@@ -80,20 +80,20 @@ def get_customer_communication_details(req_body):
                             json_make["file_Source"]=file_source
                             json_make["product"]=product
                             json_make["product_Type"]=product_type
-                            json_make["aka"]=datastr.get("AKA",config.hypen_delimiter)
-                            json_make["batch"]=datastr.get("Batch #",config.hypen_delimiter)
-                            json_make["sample"]=datastr.get("Sample #",config.hypen_delimiter)
-                            json_make["system"]=datastr.get("System",config.hypen_delimiter)
-                            json_make["date"]=datastr.get("Date",config.hypen_delimiter)
-                            json_make["aluminium_Al"]=datastr.get("Aluminum (Al)",config.hypen_delimiter)
-                            json_make["antimony_Sb"]=datastr.get("Antimony (Sb)",config.hypen_delimiter)
-                            json_make["arsenic_As"]=datastr.get("Arsenic (As)",config.hypen_delimiter)
-                            json_make["barium_Ba"]=datastr.get("Barium (Ba)",config.hypen_delimiter)
-                            json_make["beryllium_Be"]=datastr.get("Beryllium (Be)",config.hypen_delimiter)
-                            json_make["boron_B"]=datastr.get("Boron (B)",config.hypen_delimiter)
-                            json_make["cadmium_Cd"]=datastr.get("Cadmium (Cd)",config.hypen_delimiter)
-                            json_make["calcium_Ca"]=datastr.get("Calcium (Ca)",config.hypen_delimiter)
-                            json_make["carbon"]=datastr.get("Carbon",config.hypen_delimiter)
+                            json_make["aka"]=remove_nan(datastr.get("AKA",config.hypen_delimiter))
+                            json_make["batch"]=remove_nan(datastr.get("Batch #",config.hypen_delimiter))
+                            json_make["sample"]=remove_nan(datastr.get("Sample #",config.hypen_delimiter))
+                            json_make["system"]=remove_nan(datastr.get("System",config.hypen_delimiter))
+                            json_make["date"]=remove_nan(datastr.get("Date",config.hypen_delimiter))
+                            json_make["aluminium_Al"]=remove_nan(datastr.get("Aluminum (Al)",config.hypen_delimiter))
+                            json_make["antimony_Sb"]=remove_nan(datastr.get("Antimony (Sb)",config.hypen_delimiter))
+                            json_make["arsenic_As"]=remove_nan(datastr.get("Arsenic (As)",config.hypen_delimiter))
+                            json_make["barium_Ba"]=remove_nan(datastr.get("Barium (Ba)",config.hypen_delimiter))
+                            json_make["beryllium_Be"]=remove_nan(datastr.get("Beryllium (Be)",config.hypen_delimiter))
+                            json_make["boron_B"]=remove_nan(datastr.get("Boron (B)",config.hypen_delimiter))
+                            json_make["cadmium_Cd"]=remove_nan(datastr.get("Cadmium (Cd)",config.hypen_delimiter))
+                            json_make["calcium_Ca"]=remove_nan(datastr.get("Calcium (Ca)",config.hypen_delimiter))
+                            json_make["carbon"]=remove_nan(datastr.get("Carbon",config.hypen_delimiter))
                             json_list.append(json_make)
                     except Exception as e:
                         pass       
@@ -115,8 +115,6 @@ def get_customer_communication_details(req_body):
                     json_make={}
                     json_make["case_Number"]=row["CASENUMBER"]
                     json_make["manufacturing_Plant"]=row["MANUFACTURINGPLANT"]
-                    # customer_name=(row["ACCOUNTNAME"]).split("||")
-                    # json_make["customer_Name"]=(config.comma_delimiter).join(customer_name)
                     json_make["customer_Name"]=row["ACCOUNTNAME"]
                     json_make["key"]=row["MATCHEDPRODUCTVALUE"]
                     json_make["product_Type"]=row["MATCHEDPRODUCTCATEGORY"]
@@ -155,4 +153,11 @@ def get_customer_communication_details(req_body):
     except Exception as e:
         return json_list
                         
-
+def remove_nan(value):
+    try:
+        if value.strip().lower()=="nan" or value.strip()=="":
+            return config.hypen_delimiter
+        else:
+            return value
+    except Exception as e:
+        return value

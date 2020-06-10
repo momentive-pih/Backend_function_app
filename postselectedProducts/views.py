@@ -71,6 +71,9 @@ def selected_products(data_json,searched_product_flag="yes"):
                 material_level_flag = 's'
                 material_count = count
                 material_number = search_value_split[search_column_split.index("MATERIAL NUMBER")]
+                #add proceeding zeros
+                if len(material_number)!=18:
+                    material_number = helper.add_proceeding_zeros(material_number)
                 material_bdt = search_value_split[search_column_split.index("BDT")]
                 material_description = search_value_split[search_column_split.index("DESCRIPTION")]
                 material_level_json = {"material_Number":material_number,"bdt":material_bdt,"description":material_description}
@@ -88,8 +91,9 @@ def selected_products(data_json,searched_product_flag="yes"):
                     #to find material level details
                     material_df=finding_material_details_using_real_specid(real_spec_list,params)
                     material_df=material_df.sort_values(by=['TEXT1']) 
+                    org_mat_df=material_df.copy()
                     if searched_product_flag=="yes":
-                        searched_product_list=searched_product_list+product_level_creation(material_df,material_number_category,"","","MAT*","MATERIAL-LEVEL","yes")
+                        searched_product_list=searched_product_list+product_level_creation(org_mat_df,material_number_category,"","","MAT*","MATERIAL-LEVEL","yes")
                     #to find cas level details
                     cas_df,spec_rel_list=finding_cas_details_using_real_specid(real_spec_list,params)
                     cas_df=cas_df.sort_values(by=['TEXT2'])  
@@ -108,9 +112,10 @@ def selected_products(data_json,searched_product_flag="yes"):
                 elif cas_level_flag=='s' and cas_count==2 and material_level_flag=='':
                     #to find material level details
                     material_df=finding_material_details_using_real_specid(real_spec_list,params)
-                    material_df=material_df.sort_values(by=['TEXT1'])      
+                    material_df=material_df.sort_values(by=['TEXT1'])   
+                    org_mat_df=material_df.copy()   
                     if searched_product_flag=="yes":
-                        searched_product_list=searched_product_list+product_level_creation(material_df,material_number_category,"","","MAT*","MATERIAL-LEVEL","yes")
+                        searched_product_list=searched_product_list+product_level_creation(org_mat_df,material_number_category,"","","MAT*","MATERIAL-LEVEL","yes")
                     properties,selected_spec_list=basic_properties("product_level","","cas_level",product_level_json,material_df,cas_level_json,"",real_spec_list)
             
             elif material_level_flag =='s' and material_count==1:
@@ -166,8 +171,9 @@ def selected_products(data_json,searched_product_flag="yes"):
                     #to find material level details
                     material_df=finding_material_details_using_real_specid(real_spec_list,params)
                     material_df=material_df.sort_values(by=['TEXT1'])  
+                    org_mat_df=material_df.copy()
                     if searched_product_flag=="yes":
-                        searched_product_list=searched_product_list+product_level_creation(material_df,material_number_category,"","","MAT*","MATERIAL-LEVEL","yes")
+                        searched_product_list=searched_product_list+product_level_creation(org_mat_df,material_number_category,"","","MAT*","MATERIAL-LEVEL","yes")
                     properties,selected_spec_list=basic_properties("","","cas_level",prod_df,material_df,cas_level_json,spec_rel_list,real_spec_list)
 
                 elif product_level_flag =='s' and product_count ==2 and material_level_flag=='':
@@ -175,8 +181,9 @@ def selected_products(data_json,searched_product_flag="yes"):
                     real_spec_list=[product_rspec]
                     material_df=finding_material_details_using_real_specid(real_spec_list,params)
                     material_df=material_df.sort_values(by=['TEXT1'])  
+                    org_mat_df=material_df.copy()
                     if searched_product_flag=="yes":
-                        searched_product_list=searched_product_list+product_level_creation(material_df,material_number_category,"","","MAT*","MATERIAL-LEVEL","yes")
+                        searched_product_list=searched_product_list+product_level_creation(org_mat_df,material_number_category,"","","MAT*","MATERIAL-LEVEL","yes")
                     properties,selected_spec_list=basic_properties("product_level","","cas_level",product_level_json,material_df,cas_level_json,spec_rel_list,real_spec_list)
 
                 elif material_level_flag=='s' and material_count==2 and product_level_flag=='':

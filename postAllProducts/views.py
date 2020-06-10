@@ -35,12 +35,14 @@ def all_products(data):
         search_value=''
         key_flag=''
         search=data.lstrip()
-        key_found=''        
+        key_found=''  
+        search_type="exact"      
         if "*" in search:
             key_flag='s'
             search_split=search.split('*',1)
             search_key=search_split[0]+"*"
-            search_value = search_split[1].strip()                                                        
+            search_value = search_split[1].strip()  
+        
         all_product_list=[]
         if key_flag=='s':
             #ONTOLOGY search
@@ -69,11 +71,15 @@ def all_products(data):
                         break
         if len(search)>=2 and key_found=='': 
             search_value=helper.replace_character_for_querying([search])
+            if search_value.isdigit():
+                rex=re.compile(r"({})".format(search_value),re.I)
+                search_value=f"*{search_value}"     
+            else:
+                rex=re.compile(r"(^{})".format(search_value),re.I)
             # query=f'(TEXT1:{search_value}* || TEXT2:{search_value}* || TEXT3:{search_value}*) && TYPE:(NUMCAS || NAMPROD || MATNBR)'    
             # query=f'(TEXT1:{search_value}* || TEXT2:{search_value}* || TEXT3:{search_value}*) && -TYPE:SUBIDREL'
             query=f'(TEXT1:{search_value}* || TEXT2:{search_value}* || TEXT3:{search_value}*) && -TYPE:SUBIDREL && -TEXT6:X'
             df_product_combine=querying_solr_data(query,config.product_column,solr_product_params)
-            rex=re.compile(r"(^{})".format(search_value),re.I)
             for item in search_category:
                 edit_df=df_product_combine[df_product_combine[item].str.contains(rex,na=False)]
                 if len(edit_df)>0:

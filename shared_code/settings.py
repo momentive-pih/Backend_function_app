@@ -97,7 +97,7 @@ ontology_assigned_template={
             },"EU-FDA":{
                 "EU-FDA":[],"category":"EU-FDA"
             },"Toxicology-summary":{
-                "Toxicology-summary":[],"category":"Toxicology-summary"
+                "Toxicology-summary":[],"category":"Toxicology Summary"
             },"CIDP":{
                 "CIDP":[],"category":"CIDP"
             },"Toxicology":{

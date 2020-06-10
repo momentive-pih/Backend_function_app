@@ -25,6 +25,7 @@ def get_sales_data_details(req_body):
         category=["SAP-BW"]
         material_level_data=req_body.get("Mat_Level")
         all_details_json,spec_list,material_list=helper.construct_common_level_json(req_body)
+        ret=helper.make_common_query_for_std_legal_composition(all_details_json)
         sale_info_query=helper.unstructure_template(all_details_json,category)
         params={"fl":config.unstructure_column_str}
         result,result_df=helper.get_data_from_core(solr_unstructure_data,sale_info_query,params)

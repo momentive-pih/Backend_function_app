@@ -72,12 +72,14 @@ def home_page_details(all_details_json,spec_list,arranged_level_json):
             for matid in arranged_level_json.get("Mat_Level"):
                 try:
                     mat_spec_id=matid.get("real_Spec_Id")
+                    mat_number=(matid.get("material_Number",config.hypen_delimiter)).lstrip("0")
                     if type(mat_spec_id)==str and (item in mat_spec_id):
-                        mat_str_list.append(matid.get("bdt",config.hypen_delimiter)+(config.pipe_delimitter)+matid.get("material_Number",config.hypen_delimiter)+(config.pipe_delimitter)+matid.get("description",config.hypen_delimiter))
+                        # matid.get("material_Number",config.hypen_delimiter)
+                        mat_str_list.append(matid.get("bdt",config.hypen_delimiter)+(config.pipe_delimitter)+mat_number+(config.pipe_delimitter)+matid.get("description",config.hypen_delimiter))
                     elif type(mat_spec_id)==list:
                         for inside_mat in mat_spec_id:
                             if item in inside_mat:
-                                mat_str_list.append(matid.get("bdt",config.hypen_delimiter)+(config.pipe_delimitter)+matid.get("material_Number",config.hypen_delimiter)+(config.pipe_delimitter)+matid.get("description",config.hypen_delimiter))
+                                mat_str_list.append(matid.get("bdt",config.hypen_delimiter)+(config.pipe_delimitter)+mat_number+(config.pipe_delimitter)+matid.get("description",config.hypen_delimiter))
                                 break
                 except Exception as e:
                     pass
@@ -251,7 +253,7 @@ def home_page_details(all_details_json,spec_list,arranged_level_json):
         sales_kg=helper.set_decimal_points(sales_kg)
         sales_kg=str(sales_kg)
         sales_information.append({"image":config.home_icon_sales_info})       
-        sales_information.append({"Total sales in 2019(Kg)" :sales_kg})
+        sales_information.append({"Total sales volume in 2019 (in Kg)" :sales_kg})
         sales_information.append({"Regions where sold" :sold_country})
         sales_information.append({"tab_modal": "salesModal"})
         home_page_details["Sales Information"]=sales_information

@@ -94,31 +94,34 @@ def get_product_attributes(req_body):
                         datastr=json.loads(data.get("DATA_EXTRACT",{}))
                         result_spec=data.get("SPEC_ID")
                         spec_id=helper.finding_spec_details(spec_list,result_spec)
-                        path=datastr.get("image_path",config.hypen_delimiter)
-                        if path.lower().endswith('pdf'):
-                            file_type='pdf'
-                        elif path.lower().endswith('png'):
-                            file_type='png'
+                        path=datastr.get("image_path")
+                        if path != None:
+                            if path.lower().endswith('pdf'):
+                                file_type='pdf'
+                            elif path.lower().endswith('png'):
+                                file_type='png'
+                            else:
+                                file_type='others'
+                            file_split=path.split("/")
+                            file_source=''
+                            for source in config.file_sources:
+                                if source in file_split:
+                                    file_source=source
+                                    break
+                            filename=datastr.get("file_name",config.hypen_delimiter)
+                            if '.pdf' in filename:
+                                filename=filename[:-4]
+                            json_make["filename"]=filename
+                            json_make["file_source"]=file_source
+                            json_make["file_Type"]=file_type
+                            json_make["product"]=product
+                            json_make["product_Type"]=product_type
+                            path=helper.replace_char_in_url(path)
+                            json_make["prod_App"]=config.blob_file_path+path.replace("/dbfs/mnt/","")+config.sas_token
+                            json_make["spec_Id"]=spec_id
+                            json_list.append(json_make)  
                         else:
-                            file_type='others'
-                        file_split=path.split("/")
-                        file_source=''
-                        for source in config.file_sources:
-                            if source in file_split:
-                                file_source=source
-                                break
-                        filename=datastr.get("file_name",config.hypen_delimiter)
-                        if '.pdf' in filename:
-                            filename=filename[:-4]
-                        json_make["filename"]=filename
-                        json_make["file_source"]=file_source
-                        json_make["file_Type"]=file_type
-                        json_make["product"]=product
-                        json_make["product_Type"]=product_type
-                        path=helper.replace_char_in_url(path)
-                        json_make["prod_App"]=config.blob_file_path+path.replace("/dbfs/mnt/","")+config.sas_token
-                        json_make["spec_Id"]=spec_id
-                        json_list.append(json_make)          
+                            continue        
                 except Exception as e:
                     pass
             product_attributes_result.append({"product_Application":json_list})     
@@ -182,10 +185,7 @@ def get_product_attributes(req_body):
                         if len(path_list)>0:
                             for file in path_list:
                                 path=(config.ghs_image_path)+file+(config.sas_token)
-                                symbols.append({"name":path})
-                        # if len(text_list)>0:
-                        #     for text in 
-                        #     symbol_text.append(file)                       
+                                symbols.append({"name":path})                  
                         json_make["symbols"]=symbols
                         json_make["symbols_Text"]=(config.comma_delimiter).join(text_list)
                         if str(data.get("ZUSAGE",config.hypen_delimiter).strip()).upper() != 'PUBLIC: REG_EU':
@@ -200,6 +200,7 @@ def get_product_attributes(req_body):
             man_flow_dg=[]
             synthesis_dg=[]
             all_details_json,spec_list,material_list = helper.construct_common_level_json(req_body)
+            std,std_df,legal,legal_df = helper.make_common_query_for_std_legal_composition(all_details_json)
             if sub_category=="Structures and Formulas":
                 un_category=config.structure_category
             else:
@@ -220,6 +221,26 @@ def get_product_attributes(req_body):
                         spec_id=helper.finding_spec_details(spec_list,result_spec) 
                         path=datastr.get("file_path",config.hypen_delimiter)
                         path=helper.replace_char_in_url(path)
+                        std_find=[]
+                        legal_find=[]
+                        std_flag="No"
+                        legal_flag="No"
+                        #checking std and legal compositon condition
+                        if product_type in ["NUMCAS"]:
+                            specid_list=spec_id.split(config.pipe_delimitter)
+                            if "CAS" in list(std_df.columns) and "SUBID" in list(std_df.columns):
+                                std_find=std_df[(std_df["CAS"]==product) & (std_df["SUBID"].isin(specid_list))]
+                            elif "CAS" in list(legal_df.columns) and "SUBID" in list(legal_df.columns):
+                                legal_find=legal_df[(legal_df["CAS"]==product) & (legal_df["SUBID"].isin(specid_list))]
+                            if len(std_find)==0 and len(legal_find)==0:
+                               continue 
+                            else:
+                                if len(std_find)>0:
+                                    std_flag="Yes"
+                                if len(legal_find)>0:
+                                    legal_flag="Yes"
+                                json_make["standardComposition"]=std_flag
+                                json_make["legalComposition"]=legal_flag
                         if path.lower().endswith('pdf'):
                             file_type='pdf'
                         elif path.lower().endswith('png'):
@@ -246,32 +267,29 @@ def get_product_attributes(req_body):
                             json_make["file_Type"]=file_type
                             chem_structure.append(json_make)
                         elif category=="molecular formula":
-                            path=datastr.get("image_path","-")
-                            if path.lower().endswith('pdf'):
-                                file_type='pdf'
-                            elif path.lower().endswith('png'):
-                                file_type='png'
+                            path=datastr.get("image_path")
+                            if path != None:
+                                if path.lower().endswith('pdf'):
+                                    file_type='pdf'
+                                elif path.lower().endswith('png'):
+                                    file_type='png'
+                                else:
+                                    file_type='others'
+                                json_make["fileName"]=datastr.get("file_name",config.hypen_delimiter)
+                                json_make["file_Path"]=(config.blob_file_path)+path.replace("/dbfs/mnt/","")+(config.sas_token)  
+                                json_make["file_Type"]=file_type
+                                molecular_formula.append(json_make)  
                             else:
-                                file_type='others'
-                            json_make["fileName"]=datastr.get("file_name",config.hypen_delimiter)
-                            json_make["file_Path"]=(config.blob_file_path)+path.replace("/dbfs/mnt/","")+(config.sas_token)  
-                            json_make["file_Type"]=file_type
-                            molecular_formula.append(json_make)               
+                                continue             
                         elif category=="Molecular-Weight":
                             json_make["fileName"]=datastr.get("file_name",config.hypen_delimiter)
                             json_make["file_Path"]=(config.blob_file_path)+path.replace("/dbfs/mnt/","")+(config.sas_token)  
                             json_make["file_Type"]=file_type
-                            weight=datastr.get("Molecular Weight",config.hypen_delimiter)
-                            ####
-                            # edit_weight=weight.lower().replace("molecular weight","").strip()
-                            # regx=re.compie(r'^(\s*[:,-]*\s*\d+|\s*[:,-]*\s*\.\d+)(.*))')
-                            # match=regx.search(edit_weight)
-                            # if match.group():
-                            #     weight_value=match.group()
-                            # else:
-                            #     weight_value=config.hypen_delimiter
-                            ###
-                            json_make["moelcular_Weight"]=weight
+                            weight=datastr.get("Molecular Weight")
+                            if weight != None:
+                                json_make["moelcular_Weight"]=weight
+                            else:
+                                continue
                             molecular_weight.append(json_make)   
                         elif category=="man_flow_diagram":
                             filename=datastr.get("file_path",config.hypen_delimiter).split("/")
@@ -563,10 +581,11 @@ def find_std_hundrd_composition_details(validity,cas_query,spec_query,req_body,a
                 pass
         # #sort desceding order
         if len(json_list)>0:
-            std_hund_result = json.dumps(json_list)
-            std_hund_df=pd.read_json(std_hund_result,dtype=str)
-            sorted_df=std_hund_df.sort_values(by=['std_cal_value'],ascending=False)  
-            sorted_dict=json.loads(sorted_df.to_json(orient='index'))
+            sorted_dict=sort_cvalue(json_list,"std_cal_value")
+            # std_hund_result = json.dumps(json_list)
+            # std_hund_df=pd.read_json(std_hund_result,dtype=str)
+            # sorted_df=std_hund_df.sort_values(by=['std_cal_value'],ascending=False)  
+            # sorted_dict=json.loads(sorted_df.to_json(orient='index'))
             json_list=[]
             for item in sorted_dict:
                 json_list.append(sorted_dict.get(item))
@@ -625,11 +644,7 @@ def find_legal_composition_details(validity,cas_query,spec_query,req_body,all_de
                             json_list.append(json_make) 
                     break 
         if len(json_list)>0:
-            # #sort desceding order
-            legal_result = json.dumps(json_list)
-            legal_df=pd.read_json(legal_result,dtype=str)
-            sorted_df=legal_df.sort_values(by=['legal_cal_value'],ascending=False)  
-            sorted_dict=json.loads(sorted_df.to_json(orient='index'))
+            sorted_dict=sort_cvalue(json_list,"legal_cal_value")
             json_list=[]
             for item in sorted_dict:
                 json_list.append(sorted_dict.get(item))
@@ -744,3 +759,15 @@ def get_specid_namprod_details(all_details_json):
         return spec_str
     except Exception as e:
         return spec_str
+
+def sort_cvalue(json_list,sort_column):
+    try:
+        # #sort desceding order
+        result = json.dumps(json_list)
+        df=pd.read_json(result,dtype=str)
+        df[sort_column]=df[sort_column].astype(float)
+        sorted_df=df.sort_values(by=[sort_column],ascending=False)  
+        sorted_dict=json.loads(sorted_df.to_json(orient='index'))
+        return sorted_dict
+    except Exception as e:
+        return json_list

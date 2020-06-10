@@ -113,7 +113,8 @@ def product_level_creation(product_df,product_category_map,type,subct,key,level_
                 temp_df=temp_df.drop(columns=["TYPE"])
         else:
             temp_df=product_df
-        
+        if key in ["MAT*","BDT*"]:
+            temp_df=remove_proceeding_zeros(temp_df)
         temp_df.drop_duplicates(inplace=True)
         # temp_df=temp_df.replace({"nan":"-"})
         total_count=0
@@ -192,6 +193,8 @@ def finding_material_details_using_real_specid(product_rspec,params):
         product_rspec=" || ".join(product_rspec)
         query=f'TYPE:MATNBR && TEXT2:({product_rspec}) && -TEXT6:X'
         material_df=querying_solr_data(query,params)
+        # #remove proceding zeros
+        # material_df=remove_proceeding_zeros(material_df)
         return material_df
     except Exception as e:
         pass
@@ -545,22 +548,44 @@ def make_log_details(id_key,created_by,created_date):
     except Exception as e:
         pass
     return json_list
-# def main(req: func.HttpRequest) -> func.HttpResponse:
-#     logging.info('Python HTTP trigger function processed a request.')
 
-#     name = req.params.get('name')
-#     if not name:
-#         try:
-#             req_body = req.get_json()
-#         except ValueError:
-#             pass
-#         else:
-#             name = req_body.get('name')
+def remove_proceeding_zeros(product_df):
+    try:
+        product_df["TEXT1"]=product_df["TEXT1"].str.lstrip("0")
+        return product_df
+    except Exception as e:
+        return product_df
 
-#     if name:
-#         return func.HttpResponse(f"Hello {name}!")
-#     else:
-#         return func.HttpResponse(
-#              "Please pass a name on the query string or in the request body",
-#              status_code=400
-#         )
+def add_proceeding_zeros(material_number):
+    try:
+        zero_add=""
+        len_material_number=len(material_number)
+        if len_material_number !=18:
+            add_zeros=18-len_material_number
+        for value in range(add_zeros):
+            zero_add+="0"
+        return zero_add+material_number
+    except Exception as e:
+        return material_number
+
+def make_common_query_for_std_legal_composition(all_details):
+    try:
+        spec_query_list=[]
+        spec_query_str=''
+        for specid in all_details:
+            try:
+                spec_query=f'SUBID:*{specid}*'
+                product_list=all_details.get(specid).get("pure_spec_id")
+                replaced_query=replace_character_for_querying(product_list)
+                product_value_query=f'CSUBI:({replaced_query})'
+                product_query=f'({spec_query} && {product_value_query})'
+                spec_query_list.append(product_query)
+            except Exception as e:
+                pass
+        spec_query_str=(config.or_delimiter).join(spec_query_list)   
+        std,std_df=get_data_from_core(config.solr_std_composition,spec_query_str)
+        legal_query_str=f"({spec_query_str}) && (ZUSAGE:REACH\:\ REG_REACH)"
+        legal,legal_df=get_data_from_core(config.solr_legal_composition,legal_query_str)
+        return std,std_df,legal,legal_df    
+    except Exception as e:
+        pass
