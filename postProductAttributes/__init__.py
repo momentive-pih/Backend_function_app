@@ -522,12 +522,16 @@ def find_std_hundrd_composition_details(validity,cas_query,spec_query,req_body,a
                 hundrd_flag=''
                 inci_flag=''
                 json_make={} 
+                std_iupac_name=config.hypen_delimiter
+                hundrd_iupac_name=config.hypen_delimiter
                 for std in std_values:
                     if (std.get("CSUBI").strip()==item.get("pure_Spec_Id")):
                         std_flag='s'
                         json_make["std_Componant_Type"]=std.get("COMPT","-")
                         json_make["std_value"]=helper.set_decimal_points(std.get("CVALU",0))
                         json_make["std_unit"]=std.get("CUNIT","-")
+                        std_iupac_name=std.get("NAM_IUPAC_EN","-")
+                        std_cas_name=std.get("NAM_CAS_EN","-")
                         json_make["std_cal_value"]=helper.calculate_ppm_ppb(std.get("CVALU",0),std.get("CUNIT","-"))
                 for hundrd in hund_values:
                     if hundrd.get("CSUBI").strip()==item.get("pure_Spec_Id"):
@@ -535,6 +539,8 @@ def find_std_hundrd_composition_details(validity,cas_query,spec_query,req_body,a
                         json_make["hundrd_Componant_Type"]=hundrd.get("COMPT","-")
                         json_make["hundrd_value"]=helper.set_decimal_points(hundrd.get("CVALU",0))
                         json_make["hundrd_unit"]=hundrd.get("CUNIT","-")
+                        hundrd_iupac_name=std.get("NAM_IUPAC_EN","-")
+                        hundrd_cas_name=std.get("NAM_CAS_EN","-")
                         json_make["hundrd_cal_value"]=helper.calculate_ppm_ppb(hundrd.get("CVALU",0),hundrd.get("CUNIT","-"))
                 for inci in cidp_values:
                     data=json.loads(inci.get("DATA_EXTRACT"))
@@ -560,7 +566,14 @@ def find_std_hundrd_composition_details(validity,cas_query,spec_query,req_body,a
                     json_make["real_Spec_Id"]=spec_with_namprod
                     json_make["pure_spec_Id"]=str(item.get("pure_Spec_Id"))
                     json_make["cas_Number"]=item.get("cas_Number")
-                    json_make["ingredient_Name"]=item.get("chemical_Name")
+                    if (str(item.get("chemical_Name")).strip()=="-" or str(item.get("chemical_Name")).strip()==""):
+                        if std_cas_name!="-":
+                            chemical_name=std_cas_name
+                        else:
+                            chemical_name=std_iupac_name  
+                    else:
+                        chemical_name=item.get("chemical_Name")
+                    json_make["ingredient_Name"]=chemical_name
                     json_list.append(json_make)
                 break
     if len(json_list)>0:
@@ -634,7 +647,14 @@ def find_legal_composition_details(validity,cas_query,spec_query,req_body,all_de
                             json_make["real_Spec_Id"]=spec_with_namprod
                             json_make["pure_spec_Id"]=str(item.get("pure_Spec_Id"))
                             json_make["cas_Number"]=item.get("cas_Number")
-                            json_make["ingredient_Name"]=item.get("chemical_Name")
+                            if (str(item.get("chemical_Name")).strip()=="-" or str(item.get("chemical_Name")).strip()==""):
+                                if data.get("NAM_CAS_EN","-") != '-':
+                                    chemical_name=data.get("NAM_CAS_EN","-")
+                                else:
+                                    chemical_name=data.get("NAM_IUPAC_EN","-")
+                            else:
+                                chemical_name=item.get("chemical_Name")
+                            json_make["ingredient_Name"]=chemical_name
                             json_make["legal_Componant_Type"]=data.get("COMPT","-")
                             json_make["legal_value"]=helper.set_decimal_points(data.get("CVALU",0))
                             json_make["legal_cal_value"]=helper.calculate_ppm_ppb(data.get("CVALU",0),data.get("CUNIT","-"))
