@@ -28,7 +28,10 @@ def get_log_details(req_body):
         if len(values)>0:
             created_date=values[0].get("CREATED_DATE","-")
             created_by=values[0].get("CREATED_BY","-")
-            json_list=helper.make_log_details(id_key,created_by,created_date)
+            product=values[0].get("ONTOLOGY_KEY","-")
+            product_type=values[0].get("KEY_TYPE","-")
+            data_value=values[0].get("ONTOLOGY_VALUE","-")
+            json_list=helper.make_log_details(id_key,created_by,created_date,product_type,product,data_value)
     except Exception as e:
         pass
     return json_list

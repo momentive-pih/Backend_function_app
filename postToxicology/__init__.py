@@ -1,9 +1,9 @@
 import logging
-import json
 import azure.functions as func
 import pandas as pd
 import os 
 import pysolr
+import json 
 from __app__.shared_code import settings as config
 from __app__.shared_code import helper
 
@@ -20,11 +20,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
 def get_toxicology_details(req_body):
     try:
-        all_details_json,spec_list,material_list = helper.construct_common_level_json(req_body)
-        std,std_df,legal,legal_df = helper.make_common_query_for_std_legal_composition(all_details_json)
         sub_category=req_body.get("Category_details").get("Subcategory")
         json_list=[]
         if sub_category in config.toxicology_category:
+            all_details_json,spec_list,material_list = helper.construct_common_level_json(req_body)
+            std,std_df,legal,legal_df = helper.make_common_query_for_std_legal_composition(all_details_json)
             category=config.toxicology_dict.get(sub_category)
             toxicology_query=helper.unstructure_template(all_details_json,category)
             params={"fl":config.unstructure_column_str}
@@ -40,8 +40,10 @@ def get_toxicology_details(req_body):
                         ontology_value=item.get("ONTOLOGY_VALUE","")
                         spec_id=helper.finding_spec_details(spec_list,result_spec)
                         product=item.get("PRODUCT",config.hypen_delimiter)
-                        product_type=item.get("PRODUCT_TYPE",config.hypen_delimiter)
-                        datastr=json.loads(item.get("DATA_EXTRACT"))
+                        product_type=item.get("PRODUCT_TYPE",config.hypen_delimiter)  
+                        extract_data= item.get("DATA_EXTRACT","")  
+                        import json
+                        datastr=json.loads(extract_data)
                         category=item.get("CATEGORY","")
                         file_path=datastr.get("file_path",config.hypen_delimiter)
                         file_path=helper.replace_char_in_url(file_path)
@@ -113,11 +115,6 @@ def get_toxicology_details(req_body):
                                 json_make["comments"]=config.hypen_delimiter
                                 json_make["segment"]="Sealant"
                             json_list.append(json_make)                  
-                        # elif sub_category=="Monthly Toxicology Study List" and category=="tox_study_selant":
-                        #     json_make["test"]=datastr.get("Test",config.hypen_delimiter)
-                        #     json_make["actions"]=datastr.get("Actions",config.hypen_delimiter)
-                        #     json_make["date"]=datastr.get("date",config.hypen_delimiter)
-                        #     selant.append(json_make)
                         elif sub_category=="Toxicology Summary":
                             if product_type in ["NUMCAS"]:
                                 specid_list=spec_id.split(config.pipe_delimitter)
@@ -147,34 +144,53 @@ def get_toxicology_details(req_body):
                         pass
             if sub_category=="Monthly Toxicology Study List":
                 monthly_studies={}
-                # if len(selant)>0:
-                #     selant=sort_date(selant)
-                # if len(silanes):
-                #     silanes=sort_date(silanes) 
                 if len(json_list) >0:
-                    json_list=sort_date(json_list) 
-                # monthly_studies["selant"]=selant
-                # monthly_studies["silanes"]=silanes
-                # json_list.append(monthly_studies)                    
+                    json_list=sort_date(json_list)                
         elif sub_category=="Toxicology Registration Tracker":
-            query=f'*:*'
-            tracker_values,tracker_df=helper.get_data_from_core(config.solr_registration_tracker,query)
-            if len(tracker_values)>0:
-                for data in tracker_values:
-                    try:
-                        json_make={}
-                        json_make["product_Name"]=data.get("PRODUCTNAME",config.hypen_delimiter)
-                        json_make["country_Name"]=data.get("COUNTRYNAME",config.hypen_delimiter)
-                        json_make["tonnage_Band"]=data.get("TONNAGEBAND",config.hypen_delimiter)
-                        json_make["study_Type"]=data.get("STUDYTYPE",config.hypen_delimiter)
-                        json_make["test_Method"]=data.get("TESTMETHOD",config.hypen_delimiter)
-                        json_make["test_Name"]=data.get("TESTNAME",config.hypen_delimiter)
-                        json_make["estimated_Timing"]=data.get("ESTIMATEDTIMING",config.hypen_delimiter)
-                        json_make["estimated_Cost"]=data.get("ESTIMATEDCOST",config.hypen_delimiter)
-                        json_make["new_Estimates"]=data.get("NEWESTIMATES",config.hypen_delimiter)
-                        json_list.append(json_make)
-                    except Exception as e:
-                        pass   
+            if ("tonnage_band") not in req_body and ("product" not in req_body) and ("country" not in req_body):
+                product_list=[]
+                tonnage_band_list=[]
+                country_list=[]
+                product_list=get_product_list()
+                country_list=get_country_list()
+                tonnage_band_list=get_tonnage_band_list()
+                json={
+                    "product":product_list,
+                    "country":country_list,
+                    "tonnage_band":tonnage_band_list
+                }
+                json_list.append(json)
+            else:
+                tonnage_band_limit=req_body.get("tonnage_band","ALL")
+                product_name=req_body.get("product").get("name","")
+                country=req_body.get("country",[])
+                tracker_query=config.registration_tracker_query.format(tonnage_band_limit,product_name)
+                group_test_query=config.select_query.format(config.view_connector,config.group_test_view_name)
+                #get data from sql 
+                tracker_sql_df,tracker_sql_list=helper.get_data_from_sql_table(tracker_query,"yes")
+                group_test_df,group_test_list=helper.get_data_from_sql_table(group_test_query,"yes")
+                if len(tracker_sql_df)>0:
+                    # country_cost=get_country_subtotal(tracker_sql_df)
+                    #find total cost 
+                    if len(country)>0 and country[0] != "ALL":
+                        tracker_sql_df["CountryName"]=tracker_sql_df["CountryName"].str.strip()
+                        tracker_sql_df=tracker_sql_df[tracker_sql_df["CountryName"].isin(country)]
+                    
+                    if "EstimatedCost" in tracker_sql_df.columns and "Completed" in tracker_sql_df.columns:
+                        cost_df=tracker_sql_df[tracker_sql_df["Completed"].str.contains("no",case=False)]
+                        total_cost=cost_df["EstimatedCost"].sum()
+                    else:
+                        total_cost=0
+                    study_type_cost=get_study_type_subtotal(tracker_sql_df)
+                    total_estimated_time=get_estimated_time(tracker_sql_df,group_test_df)       
+                    registartion_tracker_list=get_json_format_data(tracker_sql_list,country)
+                    json_make={
+                        "total_Cost":str(helper.set_two_decimal_points(total_cost)),
+                        "study_Type_Cost":study_type_cost,
+                        "total_Estimated_Time":str(helper.set_two_decimal_points(total_estimated_time)),
+                        "registartion_Data":registartion_tracker_list
+                    }
+                    json_list.append(json_make)
         return json_list
     except Exception as e:
         return []
@@ -195,3 +211,135 @@ def sort_date(values):
         return json_list
     except Exception as e:
         return []
+
+def get_country_subtotal(tracker_sql_df):
+    try: 
+        country_cost={}       
+        if ("CountryName" in tracker_sql_df.columns) and ("EstimatedCost" in tracker_sql_df.columns):
+            country_list=list(tracker_sql_df["CountryName"].unique())
+            for country in country_list:
+                country_df=tracker_sql_df[tracker_sql_df["CountryName"]==country]
+                total=country_df["EstimatedCost"].sum()
+                country_cost[country]=total
+        return country_cost
+    except Exception as e:
+        return {}
+    
+def get_study_type_subtotal(tracker_sql_df):
+    try: 
+        study_type_cost={}       
+        if ("StudyType" in tracker_sql_df.columns) and ("EstimatedCost" in tracker_sql_df.columns):
+            study_list=list(tracker_sql_df["StudyType"].unique())
+            for study in study_list:
+                study_df=tracker_sql_df[tracker_sql_df["StudyType"]==study]
+                total=study_df["EstimatedCost"].sum()
+                study_type_cost[study]=str(total)
+        return study_type_cost
+    except Exception as e:
+        return {}
+
+def get_estimated_time(tracker_sql_df,group_test_df):
+    try:
+        estimated_time=0
+        if "TestMethod" in tracker_sql_df.columns and "TestMethod" in group_test_df and "ParallelTestMethod" in group_test_df:        
+            if "Completed" in tracker_sql_df.columns:
+                timing_tracker_df=tracker_sql_df[tracker_sql_df["Completed"].str.contains("no",case=False)]
+                timing_tracker_df=timing_tracker_df.sort_values(by=['TestMethod'],ascending=True)  
+                timing_tracker_df["TestMethod"]=timing_tracker_df["TestMethod"].str.strip()
+                group_test_df["TestMethod"]=group_test_df["TestMethod"].str.strip()
+                group_test_df["ParallelTestMethod"]=group_test_df["ParallelTestMethod"].str.strip()
+            if len(timing_tracker_df)>0:
+                marked_test=[]
+                total_count=0
+                org_test_method_list=list(timing_tracker_df["TestMethod"])
+                test_method_list=list(timing_tracker_df["TestMethod"].unique())
+                test_timing_df=timing_tracker_df[["TestMethod","EstimatedTiming"]]
+                tracker_test_method_list=test_timing_df.values.tolist()
+                test_time_json={}
+                for test in test_method_list:
+                    if test not in marked_test:
+                        parallel_test_df=group_test_df[group_test_df["TestMethod"]==test]
+                        parallel_test_list=list(parallel_test_df["ParallelTestMethod"].unique())
+                        parallel_test_list.append(test)
+                        total_time=0
+                        time_list=[time for item,time in tracker_test_method_list if (item in parallel_test_list) and (item not in marked_test)]
+                        # total_time=float(sum(time_list))
+                        total_time=sum(time_list)
+                        average_time=float(total_time/len(time_list))
+                        estimated_time+=(org_test_method_list.count(test))*average_time
+                        marked_test+=parallel_test_list
+                        marked_test=list(set(marked_test))
+                        
+    except Exception as e:
+        pass
+    return estimated_time
+
+def get_json_format_data(tracker_values,country):
+    try:
+        json_list=[]
+        for data in tracker_values:
+            try:
+                json_make={}
+                if data.get("CountryName",config.hypen_delimiter).strip() not in country and country[0] != "ALL":
+                    continue
+                json_make["country_Name"]=data.get("CountryName",config.hypen_delimiter)
+                json_make["tonnage_Band"]=data.get("TonnageBand",config.hypen_delimiter)
+                json_make["study_Type"]=data.get("StudyType",config.hypen_delimiter)
+                json_make["test_Method"]=data.get("TestMethod",config.hypen_delimiter)
+                json_make["test_Name"]=data.get("TestName",config.hypen_delimiter)
+                json_make["estimated_Timing"]=str(data.get("EstimatedTiming",config.hypen_delimiter))
+                json_make["estimated_Cost"]=str(data.get("EstimatedCost",config.hypen_delimiter))
+                json_make["completed"]=data.get("Completed",config.hypen_delimiter)
+                json_list.append(json_make)
+            except Exception as e:
+                pass 
+    except Exception as e:
+        pass 
+    return json_list
+
+def get_product_list():
+    try:
+        json_list=[]
+        query=config.select_query.format(config.table_connector,config.tracker_product_table)
+        df=helper.get_data_from_sql_table(query)
+        if "ProductName" in df.columns:
+            for item in list(df["ProductName"].unique()):
+                json={}
+                json["name"]=str(item).strip()
+                json_list.append(json)
+    except Exception as e:
+        pass
+    return json_list
+
+def get_country_list():
+    try:
+        json_list=[]
+        query=config.select_query.format(config.table_connector,config.country_table)
+        df=helper.get_data_from_sql_table(query)
+        json_list.append({"name":"ALL"})
+        if "CountryName" in df.columns:
+            for item in list(df["CountryName"].unique()):
+                json={}
+                json["name"]=str(item).strip()
+                json_list.append(json)
+    except Exception as e:
+        pass
+    return json_list
+
+def get_tonnage_band_list():
+    try:
+        json_list=[]
+        query=config.select_query.format(config.table_connector,config.tonnage_band_table)
+        df=helper.get_data_from_sql_table(query)
+        if ("TonnageBand" in df.columns) and ("TonnageBandBucket" in df.columns):
+            band_df=df[["TonnageBand","TonnageBandBucket"]].drop_duplicates()
+            band_list=band_df.values.tolist()
+            json_list.append({"name":"ALL","band_Limit":"ALL"})
+            for item,limit in band_list:
+                json={}
+                json["name"]=str(item).strip()
+                json["band_Limit"]=limit
+                json_list.append(json)
+    except Exception as e:
+        pass
+    return json_list

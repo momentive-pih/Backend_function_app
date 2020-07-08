@@ -417,6 +417,11 @@ def set_decimal_points(value):
         value=float(value)
     return "{:.4f}".format(value)
 
+def set_two_decimal_points(value):
+    if type(value)!=float:
+        value=float(value)
+    return "{:.2f}".format(value)
+
 def calculate_ppm_ppb(value,unit):
     if unit.lower()=="ppm":
         sub_value=(config.ppm)*(float(value))
@@ -496,12 +501,12 @@ def find_ontology_value(search_value):
     except Exception as e:
         return "",""
 
-def update_in_change_audit_log(row_id,entity_name,user,action,date):
+def update_in_change_audit_log(row_id,entity_name,user,action,date,product,product_type,product_synonyms,processed_flag):
     try:
         # current_date=datetime.now()
         conn=SQL_connection()
         cursor=conn.cursor()
-        inser_value=f"'{row_id}','{entity_name}','{user}','{action}','{date}'" 
+        inser_value=f"'{row_id}','{entity_name}','{user}','{action}','{date}','{product}','{product_type}','{product_synonyms}','{processed_flag}'" 
         insert_query=f"insert into [momentive].[change_audit_log] values ({inser_value})"
         cursor.execute(insert_query)
     except Exception as e:
@@ -523,7 +528,7 @@ def log_sort_date(df,column_name):
     except Exception as e:
         return []
 
-def make_log_details(id_key,created_by,created_date):
+def make_log_details(id_key,created_by,created_date,product_type='',product='',data_value=''):
     try:
         json_list=[]
         conn=SQL_connection()
@@ -539,12 +544,19 @@ def make_log_details(id_key,created_by,created_date):
                 # json_make["created_Date"]=created_date
                 json_make["updated_By"]=data.get("user_name")
                 json_make["updated_Date"]=data.get("updated_date")
+                json_make["product_type"]=data.get("product_type")
+                json_make["product"]=data.get("product")
+                json_make["synonyms_Extract_Data"]=data.get("synonyms/extract")
                 json_list.append(json_make)  
         # if action='':
-        json_make={}
-        json_make["updated_By"]=created_by
-        json_make["updated_Date"]=created_date
-        json_list.append(json_make)
+        else:
+            json_make={}
+            json_make["updated_By"]=created_by
+            json_make["updated_Date"]=created_date
+            json_make["product_type"]=product_type
+            json_make["product"]=product
+            json_make["synonyms_Extract_Data"]=data_value
+            json_list.append(json_make)
     except Exception as e:
         pass
     return json_list
@@ -589,3 +601,54 @@ def make_common_query_for_std_legal_composition(all_details):
         return std,std_df,legal,legal_df    
     except Exception as e:
         pass
+def get_data_from_sql_table(query,get_list=""):
+    try:
+        conn=SQL_connection()
+        table_df=pd.read_sql(query,conn)
+        table_df.drop_duplicates(inplace=True)
+        table_df=table_df.fillna("-")
+        if get_list!='':
+            table_list=table_df.to_json(orient='records')
+            table_json_list=json.loads(table_list)
+            return table_df,table_json_list
+        else:
+            return table_df
+    except Exception as e:
+        pass
+
+def find_std_weight(product,product_type,spec_id,std_df):
+    #checking std compositon condition
+    std_weight=''
+    componant_type=''
+    if product_type=="NUMCAS":
+        specid_list=spec_id.split(config.pipe_delimitter)
+        if "CAS" in list(std_df.columns) and "SUBID" in list(std_df.columns):
+            std_find=std_df[(std_df["CAS"]==product) & (std_df["SUBID"].isin(specid_list))]
+    if len(std_find)==0:
+        return std_weight,componant_type
+    else:
+        if len(std_find)>0 and ("CVALU" in std_find.columns) and ("COMPT" in std_find.columns):
+            std_cvalue=std_find[["CVALU","CUNIT","COMPT"]]
+            std_cvalu_list=std_cvalue.values.tolist()
+            for value,unit,type in std_cvalu_list:
+                weight=calculate_ppm_ppb(value,unit)
+                std_weight=set_decimal_points(weight)
+                componant_type=type
+                break
+    return f"{std_weight}%",componant_type
+
+def get_generic_cas_details(all_details_json):
+    try:
+        all_cas=[]
+        find_cas_details=[]
+        for item in all_details_json:
+            all_cas+=all_details_json.get(item).get("cas_number")
+        all_cas=list(set(all_cas))
+        query=config.select_query.format(config.table_connector,config.generic_cas_table)
+        cas_df=get_data_from_sql_table(query)
+        cas_df["cas_no"]=cas_df["cas_no"].str.strip()
+        find_cas_df=cas_df[cas_df["cas_no"].isin(all_cas)]
+        find_cas_details=json.loads(find_cas_df.to_json(orient='records'))
+    except Exception as e:
+        pass
+    return find_cas_details     

@@ -98,7 +98,9 @@ def selected_products(data_json,searched_product_flag="yes"):
                     cas_df,spec_rel_list=finding_cas_details_using_real_specid(real_spec_list,params)
                     cas_df=cas_df.sort_values(by=['TEXT2'])  
                     if searched_product_flag=="yes":
-                        searched_product_list=searched_product_list+product_level_creation(cas_df,cas_number_category,"","","CAS*","CAS-LEVEL","yes")
+                        #Keeping NUMCAS sub category as only pure sub as per client reqeust for search engine
+                        searched_product_list=searched_product_list+product_level_creation(cas_df,cas_number_category,"NUMCAS","PURE_SUB","CAS*","CAS-LEVEL")
+                        # searched_product_list=searched_product_list+product_level_creation(cas_df,cas_number_category,"","","CAS*","CAS-LEVEL","yes")
                     properties,selected_spec_list=basic_properties("product_level","","",product_level_json,material_df,cas_df,spec_rel_list,real_spec_list)
 
                 elif material_level_flag=='s' and material_count==2 and cas_level_flag=='':
@@ -106,7 +108,8 @@ def selected_products(data_json,searched_product_flag="yes"):
                     cas_df,spec_rel_list=finding_cas_details_using_real_specid(real_spec_list,params)
                     cas_df=cas_df.sort_values(by=['TEXT2'])  
                     if searched_product_flag=="yes":
-                        searched_product_list=searched_product_list+product_level_creation(cas_df,cas_number_category,"","","CAS*","CAS-LEVEL","yes")
+                         searched_product_list=searched_product_list+product_level_creation(cas_df,cas_number_category,"NUMCAS","PURE_SUB","CAS*","CAS-LEVEL")                       
+                        # searched_product_list=searched_product_list+product_level_creation(cas_df,cas_number_category,"","","CAS*","CAS-LEVEL","yes")
                     properties,selected_spec_list=basic_properties("product_level","material_level","",product_level_json,material_level_json,cas_df,spec_rel_list,real_spec_list)
 
                 elif cas_level_flag=='s' and cas_count==2 and material_level_flag=='':
@@ -133,7 +136,8 @@ def selected_products(data_json,searched_product_flag="yes"):
                     cas_df,spec_rel_list=finding_cas_details_using_real_specid(real_spec_list,params)
                     cas_df=cas_df.sort_values(by=['TEXT2'])  
                     if searched_product_flag=="yes":
-                        searched_product_list=searched_product_list+product_level_creation(cas_df,cas_number_category,"","","CAS*","CAS-LEVEL","yes")
+                        searched_product_list=searched_product_list+product_level_creation(cas_df,cas_number_category,"NUMCAS","PURE_SUB","CAS*","CAS-LEVEL")
+                        # searched_product_list=searched_product_list+product_level_creation(cas_df,cas_number_category,"","","CAS*","CAS-LEVEL","yes")
                     properties,selected_spec_list=basic_properties("","material_level","",prod_df,material_level_json,cas_df,spec_rel_list,real_spec_list)
 
                 elif product_level_flag =='s' and product_count ==2 and cas_level_flag=='':
@@ -142,7 +146,8 @@ def selected_products(data_json,searched_product_flag="yes"):
                     cas_df,spec_rel_list=finding_cas_details_using_real_specid(real_spec_list,params)
                     cas_df=cas_df.sort_values(by=['TEXT2'])  
                     if searched_product_flag=="yes":
-                        searched_product_list=searched_product_list+product_level_creation(cas_df,cas_number_category,"","","CAS*","CAS-LEVEL","yes")
+                        searched_product_list=searched_product_list+product_level_creation(cas_df,cas_number_category,"NUMCAS","PURE_SUB","CAS*","CAS-LEVEL")  
+                        # searched_product_list=searched_product_list+product_level_creation(cas_df,cas_number_category,"","","CAS*","CAS-LEVEL","yes")
                     properties,selected_spec_list=basic_properties("product_level","material_level","",product_level_json,material_level_json,cas_df,spec_rel_list,real_spec_list)  
                 elif cas_level_flag=='s' and cas_count==2 and product_level_flag=='':
                     #find product details

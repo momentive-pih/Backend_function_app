@@ -38,7 +38,7 @@ def update_ontology_document(update_data):
             # updated_data_extract_string=get_updated_extract_string(data_extract_string,skip_field,update_data) 
             updated_data_extract_string=get_updated_extract_string(data_extract_string,update_data) 
             spec_id=get_spec_id_for_updated_value(product_name,product_type)
-        
+            # sql_updated_data_extract_string=
         update_value=f"is_relevant=1, product = '{product_name}',product_type='{product_type}',data_extract='{updated_data_extract_string}',updated='{current_date}',spec_id='{spec_id}'"
         update_query=f"update [momentive].[unstructure_processed_data] set {update_value} where id='{sql_id}'"
         logging.info(f'created update query {update_query}')
@@ -58,7 +58,7 @@ def update_ontology_document(update_data):
         try:
             conn.commit()
             #update in change_audit_log table
-            audit_status=helper.update_in_change_audit_log(sql_id,"Ontology Document",user,"update",current_date)
+            audit_status=helper.update_in_change_audit_log(sql_id,"Ontology Document",user,"update",current_date,product_type,product_name,updated_data_extract_string,"NULL")
             status_code=200
             doc={
             "solr_id":update_data.get("solr_Id","-"),

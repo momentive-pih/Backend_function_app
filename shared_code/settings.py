@@ -104,6 +104,7 @@ ontology_assigned_template={
                 "Toxicology":[],"category":"Toxicology"
             }
         }
+home_page_category=["EU_REG_STATUS","US_REG_STATUS","LATAM_REG_STATUS","US-FDA","EU-FDA","GADSL","CAL-PROP","SAP-BW","Heavy metals","Toxicology","Toxicology-summary"]     
 relable_column=["IDCAT","SUBID","IDTYP","LANGU","IDTXT","DELFLG"]
 ghs_label=["REBAS","SYMBL","SIGWD","HAZST","PRSTG","REMAR","ADDIN"]
 relable_column_str="IDCAT,SUBID,IDTYP,LANGU,IDTXT"
@@ -190,4 +191,58 @@ in_compliance_notification_status=["on or in compliance with the inventory",
 "y (positive listing)",
 "y"]
 not_in_compliance_notification_status=["not in compliance with the inventory.","at least one component is not listed.","n (negative listing)"]
-log_detail_query="select * from [momentive].[change_audit_log] where action = 'update' and row_id={}"
+log_detail_query="select * from [momentive].[change_audit_log] where action in ('update','insert') and row_id={}"
+tonnage_band_mapping={
+    "< 100 Kg":"1-10 MT",
+    "1-10 MT":"1-10 MT",
+    "< 10 MT":"1-10 MT",
+    "> 10 MT":"10-100 MT",
+    "10-100MT":"10-100 MT",
+    "100-1000MT":"100-1000 MT",
+    ">1000 MT":">1000 MT",
+    "0.1-1MT":"1-10 MT",
+    ">100 MT":"100-1000 MT"
+}
+registration_tracker_query="""declare @tonnagBand as varchar(50)
+declare @productName as varchar(50)
+set @tonnagBand='{}'
+set @productName='{}'
+SELECT D.CountryName, TB.TonnageBand, C.TestMethod,c.TestName, ST.StudyType          
+            , CASE WHEN PD.TestName is not null then 'YES' else 'NO' end as Completed
+            , CASE WHEN PD.TestName is not null then 0 ELSE RM.EstimatedCost END AS EstimatedCost
+            , CASE WHEN PD.TestName is not null then 0 ELSE Rm.EstimatedTiming END AS EstimatedTiming
+            , CASE WHEN PD.TestName is not null then PD.ProductName ELSE '' END AS Product
+            FROM momentive.[RegistrationMaster] RM
+            INNER JOIN  (SELECT TestMethodID,C.TestMethod,A.TonnageBandID from momentive.[RegistrationMaster] A
+inner join momentive.Country B On A.CountryID = B.Id
+INNER JOIN  momentive.TESTMETHOD C On A.TestMethodID = C.Id
+WHERE (@tonnagBand ='ALL' or TonnageBandID  in(select Id
+                                          from momentive.TonnageBand
+                                          where [Order] <= (select distinct [Order]
+                                                                        from momentive.TonnageBand
+                                                                        where TonnageBandBucket = @tonnagBand
+                                                              )
+                                    )) ) B On RM.TestMethodID = B.TestMethodID
+            INNER JOIN  momentive.TESTMETHOD C On RM.TestMethodID = C.Id
+            INNER JOIN  momentive.Country D On RM.CountryID = D.Id
+            INNER JOIN momentive.TonnageBand TB ON RM.TonnageBandID = TB.Id AND TB.Id = B.TonnageBandID
+            INNER JOIN momentive.StudyType ST ON RM.StudyTypeID = ST.Id
+            left outer join ( SELECT DISTINCT ProductName, TestName from  momentive.ProductDetails B where B.ProductName = @productName ) PD
+on B.TestMethod = PD.TestName
+WHERE (@tonnagBand ='ALL' or RM.TonnageBandID  in(select Id
+                                                      from momentive.TonnageBand
+                                                      where [Order] <= (select distinct [Order]
+                                                                                    from momentive.TonnageBand
+                                                                                    where TonnageBandBucket = @tonnagBand
+                                                                          )
+                                                ))
+ORDER BY Completed DESC , ST.StudyType DESC
+"""
+view_connector="dbo"
+table_connector="momentive"
+group_test_view_name="Parallel_Test_Details"
+tracker_product_table="ProductDetails"
+country_table="Country"
+tonnage_band_table="TonnageBand"
+generic_cas_table="Generics_CALPROP"
+select_query="select * from {}.{}"
