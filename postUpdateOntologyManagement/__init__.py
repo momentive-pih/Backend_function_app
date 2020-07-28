@@ -31,13 +31,33 @@ def update_ontology_value(update_data):
     except Exception as e:
         pass
 
+def get_exists_synonyms():
+    try:
+        primary_id=0
+        synonyms=[]
+        ontology_id_df=helper.get_data_from_sql_table(config.get_ontology_id_query)
+        if "id" in ontology_id_df.columns and "ontology_value" in ontology_id_df.columns:
+            if len(list(ontology_id_df["id"]))!=0:
+                primary_id=max(list(ontology_id_df["id"]))+1
+            else:
+                primary_id=1
+            synonyms=list(ontology_id_df["ontology_value"])
+            synonyms=[item.lower() for item in synonyms]
+    except Exception as e:
+        pass
+    return primary_id,synonyms
+
 def add_ontology_value(add_data):
     try:
+        ontology_value=add_data.get('ontologySynonyms',"")
+        primary_id,synonyms=get_exists_synonyms()
+        if ontology_value.strip().lower() in synonyms:
+            return [{"status":400,"message":"already exists"}]
+        ontology_value=ontology_value.strip().replace("'","''")
         current_date=str(datetime.now(est))[:-9]
         conn=helper.SQL_connection()
         cursor=conn.cursor()
-        ontology_value=add_data.get('ontologySynonyms',"").replace("'","''")
-        inser_value=f"'{add_data.get('synonymsProductName','')}','{add_data.get('synonymsProductType','')}','{ontology_value}','{add_data.get('synonymsCreatedBy','')}','{current_date}','{current_date}','NULL',1" 
+        inser_value=f"'{add_data.get('synonymsProductName','')}','{add_data.get('synonymsProductType','')}','{ontology_value}','{add_data.get('synonymsCreatedBy','')}','{current_date}','{current_date}','NULL',{primary_id},1" 
         insert_query=f"insert into [momentive].[ontology] values ({inser_value})"
         cursor.execute(insert_query)
         # return "added"
@@ -53,20 +73,12 @@ def add_ontology_value(add_data):
         try:
             conn.commit()
             #finding ID from solr 
-            query=f'-ID:\-'
-            sql_id=0
-            ontolgy_result,ontolgy_df=helper.get_data_from_core(config.solr_ontology,query)
-            if "ID" in ontolgy_df.columns:
-                ontolgy_df=ontolgy_df.replace({"-":"0"})
-                ontolgy_df["ID"]= ontolgy_df["ID"].apply(pd.to_numeric)
-                list_of_id=list(ontolgy_df["ID"].unique())
-            sql_id=max(list_of_id)
-            found_id=str(sql_id+1)
+            # query=f'-ID:\-'
             product_synonyms=add_data.get("ontologySynonyms","")
             product=add_data.get("synonymsProductName","")
             product_type=add_data.get("synonymsProductType","")
             doc={"ONTOLOGY_KEY":add_data.get("synonymsProductName",""),
-            "ID":str(sql_id+1), 
+            "ID":str(primary_id), 
             "KEY_TYPE":add_data.get("synonymsProductType",""),
             "ONTOLOGY_VALUE":add_data.get("ontologySynonyms",""),
             "CREATED_BY":add_data.get('synonymsCreatedBy',''),
@@ -75,7 +87,7 @@ def add_ontology_value(add_data):
             "PROCESSED_FLAG":"",
             "IS_RELEVANT":"1"}
             #update in change_audit_log table
-            audit_status=helper.update_in_change_audit_log(found_id,"Ontology Management",add_data.get('synonymsCreatedBy',''),"insert",current_date,product_type,product,product_synonyms,"N")
+            audit_status=helper.update_in_change_audit_log(str(primary_id),"Ontology Management",add_data.get('synonymsCreatedBy',''),"insert",current_date,product_type,product,product_synonyms,"N")
             status_code=200
             if audit_status=="updated in change audit log successfully":
                 config.solr_ontology.add([doc])
@@ -86,10 +98,14 @@ def add_ontology_value(add_data):
     
 def edit_ontology_value(update_data):
     try:
+        ontology_value=update_data.get('ontologySynonyms',"")
+        primary_id,synonyms=get_exists_synonyms()
+        if ontology_value.strip().lower() in synonyms:
+            return [{"status":400,"message":"already exists"}]
         current_date=str(datetime.now(est))[:-9]
         conn=helper.SQL_connection()
         cursor=conn.cursor()
-        ontology_value=update_data.get('ontologySynonyms',"").replace("'","''")
+        ontology_value=ontology_value.strip().replace("'","''")
         update_value=f"ONTOLOGY_KEY = '{update_data.get('synonymsProductName','')}',KEY_TYPE='{update_data.get('synonymsProductType','')}',ONTOLOGY_VALUE='{ontology_value}',UPDATED_DATE='{current_date}',PROCESSED_FLAG='NULL'"
         update_query=f"update [momentive].[ontology] set {update_value} where id='{update_data.get('ontology_Id','-')}'"
         cursor.execute(update_query)

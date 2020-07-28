@@ -119,7 +119,7 @@ def get_customer_communication_details(req_body):
                     json_make["key"]=row["MATCHEDPRODUCTVALUE"]
                     json_make["product_Type"]=row["MATCHEDPRODUCTCATEGORY"]
                     json_make["topic"]=row["REASON"]
-                    json_make["tier_2_Owner"]=row["SOP_TIER_2_OWNER__C"]
+                    json_make["tier_2_Owner"]=row["SOP_TIER_2_OWNER_EMAIL_FORMULA__C"]
                     json_make["bu"]=row["BU"]
                     json_list.append(json_make) 
         elif sub_category=="Communication History" and ("case_Number" in req_body):
